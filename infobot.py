@@ -13,6 +13,11 @@ class InfoBot(IRCBot):
 
         super().__init__(*args, **kwargs)
 
+    def check_op(self, nickname):
+        return (config.IRC_CHAN in self.nicklist and
+            nickname in self.nicklist[config.IRC_CHAN] and
+            self.nicklist[config.IRC_CHAN][nickname].is_op)
+
     def add_info(self, nickname, channel, reply_to, info):
         #Send server a whois to check that a user is authenticated with NickServ # Whois not doing anything??
         # self.send_raw("whois " + nickname)
@@ -20,7 +25,7 @@ class InfoBot(IRCBot):
         info_meta = self.r.get("*" + nickname.lower())
         if info_meta != None: info_meta = info_meta.decode("utf-8")
         if info_meta == "frozen":
-            if config.IRC_CHAN in self.nicklist and nickname in self.nicklist[config.IRC_CHAN] and self.nicklist[config.IRC_CHAN][nickname].is_op:
+            if self.check_op(nickname):
                 self.r.set(nickname.lower(), info)
                 self.send(reply_to, "Set info: " + info)
             else:
@@ -42,7 +47,7 @@ class InfoBot(IRCBot):
 
     def delete_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
-        if config.IRC_CHAN in self.nicklist and nickname in self.nicklist[config.IRC_CHAN] and self.nicklist[config.IRC_CHAN][nickname].is_op:
+        if self.check_op(nickname):
             self.send(reply_to, "Deleted info for " + name + ".")
             self.r.delete(name.lower()) # does not delete freezing!!
         else:
@@ -50,7 +55,7 @@ class InfoBot(IRCBot):
 
     def freeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
-        if config.IRC_CHAN in self.nicklist and nickname in self.nicklist[config.IRC_CHAN] and self.nicklist[config.IRC_CHAN][nickname].is_op:
+        if self.check_op(nickname):
             self.send(reply_to, "Froze info for " + name + ".")
             self.r.set("*" + name.lower(), "frozen")
         else:
@@ -58,7 +63,7 @@ class InfoBot(IRCBot):
 
     def unfreeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
-        if config.IRC_CHAN in self.nicklist and nickname in self.nicklist[config.IRC_CHAN] and self.nicklist[config.IRC_CHAN][nickname].is_op:
+        if self.check_op(nickname):
             self.send(reply_to, "Unfroze info for " + name + ".")
             self.r.set("*" + name.lower(), "")
         else:
@@ -66,7 +71,7 @@ class InfoBot(IRCBot):
 
     def set_info(self, nickname, channel, reply_to, name_raw, info):
         name = name_raw.strip()
-        if config.IRC_CHAN in self.nicklist and nickname in self.nicklist[config.IRC_CHAN] and self.nicklist[config.IRC_CHAN][nickname].is_op:
+        if self.check_op(nickname):
             self.send(reply_to, "Set info for " + name + ".")
             self.r.set(name.lower(), info)
         else:
@@ -105,9 +110,13 @@ class InfoBot(IRCBot):
             if attempt != None:
                 return func(nickname, channel, reply_to, **attempt.named)
 
-    #TODO: Check for whois from server
-    def on_raw(self, nickname, command, args):
-        pass
+    def on_kick(self, nickname, channel, target, message):
+        if config.AUTO_REJOIN and self.nickname == target:
+            self.join(channel)
+            self.send(channel, "%s: I automatically rejoin to prevent people from accidentally kicking me." % nickname)
+
+
+
 
 
 def main():
