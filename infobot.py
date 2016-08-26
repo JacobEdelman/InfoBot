@@ -19,11 +19,13 @@ class InfoBot(IRCBot):
             self.nicklist[config.IRC_CHAN][nickname].is_op)
 
     def add_info(self, nickname, channel, reply_to, info):
-        #Send server a whois to check that a user is authenticated with NickServ # Whois not doing anything??
-        # self.send_raw("whois " + nickname)
-        #Assumes * is not allowed at the start of nicknames
+        # Add in whois related things to authenticate the user
+        # Assumes * is not allowed at the start of nicknames
+
         info_meta = self.r.get("*" + nickname.lower())
-        if info_meta != None: info_meta = info_meta.decode("utf-8")
+        if info_meta != None:
+            info_meta = info_meta.decode("utf-8")
+
         if info_meta == "frozen":
             if self.check_op(nickname):
                 self.r.set(nickname.lower(), info)
@@ -40,7 +42,7 @@ class InfoBot(IRCBot):
             self.send(reply_to, "No info found for " + name + ".")
         else:
             info = self.r.get(name.lower())
-            if info is None:
+            if info == None:
                 self.send(reply_to, "No info found for " + name + ".")
             else:
                 self.send(reply_to, name + ": " + info.decode('utf-8'))
@@ -48,24 +50,34 @@ class InfoBot(IRCBot):
     def delete_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
         if self.check_op(nickname):
-            self.send(reply_to, "Deleted info for " + name + ".")
-            self.r.delete(name.lower()) # does not delete freezing!!
+            if self.r.get(name.lower()) == None:
+                self.send(reply_to, "No info found for " + name + ".")
+            else:
+                self.send(reply_to, "Deleted info for " + name + ".")
+                self.r.delete(name.lower())
+                self.r.delete("*" + name.lower())
         else:
             self.send(reply_to, "Only mods can do this.")
 
     def freeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
         if self.check_op(nickname):
-            self.send(reply_to, "Froze info for " + name + ".")
-            self.r.set("*" + name.lower(), "frozen")
+            if self.r.get("*" + name.lower()) == "frozen":
+                self.send(reply_to, "The info for %s was already frozen." % name)
+            else:
+                self.send(reply_to, "Froze info for " + name + ".")
+                self.r.set("*" + name.lower(), "frozen")
         else:
             self.send(reply_to, "Only mods can do this.")
 
     def unfreeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
         if self.check_op(nickname):
-            self.send(reply_to, "Unfroze info for " + name + ".")
-            self.r.set("*" + name.lower(), "")
+            if self.r.get("*" + name.lower()) == "frozen":
+                self.send(reply_to, "Unfroze info for %s." % name)
+                self.r.set("*" + name.lower(), "")
+            else:
+                self.send(reply_to, "The info for %s was not frozen." % name)
         else:
             self.send(reply_to, "Only mods can do this.")
 
