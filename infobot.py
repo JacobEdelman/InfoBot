@@ -26,7 +26,7 @@ class InfoBot(IRCBot):
         if info_meta != None:
             info_meta = info_meta.decode("utf-8")
 
-        if info_meta == "frozen":
+        if info_meta == b"frozen":
             if self.check_op(nickname):
                 self.r.set(nickname.lower(), info)
                 self.send(reply_to, "Set info: " + info)
@@ -62,7 +62,7 @@ class InfoBot(IRCBot):
     def freeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
         if self.check_op(nickname):
-            if self.r.get("*" + name.lower()) == "frozen":
+            if self.r.get("*" + name.lower()) == b"frozen":
                 self.send(reply_to, "The info for %s was already frozen." % name)
             else:
                 self.send(reply_to, "Froze info for " + name + ".")
@@ -73,7 +73,7 @@ class InfoBot(IRCBot):
     def unfreeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
         if self.check_op(nickname):
-            if self.r.get("*" + name.lower()) == "frozen":
+            if self.r.get("*" + name.lower()) == b"frozen":
                 self.send(reply_to, "Unfroze info for %s." % name)
                 self.r.set("*" + name.lower(), "")
             else:
