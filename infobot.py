@@ -62,7 +62,7 @@ class InfoBot(IRCBot):
     def freeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
 
-        info_meta = self.r.get("*" + nickname.lower())
+        info_meta = self.r.get("*" + name.lower())
         if info_meta != None:
             info_meta = info_meta.decode("utf-8")
 
@@ -78,7 +78,7 @@ class InfoBot(IRCBot):
     def unfreeze_info(self, nickname, channel, reply_to, name_raw):
         name = name_raw.strip()
 
-        info_meta = self.r.get("*" + nickname.lower())
+        info_meta = self.r.get("*" + name.lower())
         if info_meta != None:
             info_meta = info_meta.decode("utf-8")
 
